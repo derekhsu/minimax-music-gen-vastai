@@ -85,7 +85,7 @@ cat > /opt/supervisor-scripts/music-inference.sh << EOF
 utils=/opt/supervisor-scripts/utils
 . "\${utils}/logging.sh"
 . "\${utils}/environment.sh"
-source /venv/main/bin/activate
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 export HF_HOME="$HF_HOME"
 exec python /workspace/deploy/inference/server.py \\
     --host 127.0.0.1 --port 7862 --api-key "$MUSIC_API_KEY" $OFFLOAD_FLAG

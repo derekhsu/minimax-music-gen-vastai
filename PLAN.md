@@ -121,3 +121,34 @@ POST /v1/audio/speech
 1. **M1 本地驗證**：docker compose 起 inference + UI，curl 產 10s WAV 成功（需本機或暫租 GPU）
 2. **M2 vast.ai 單次部署**：手動開 instance + onstart script，smoke test 通過
 3. **M3 固化**：image push registry + template 文件化，一鍵重開
+
+## M2 部署記錄（2026-09-13，instance 50900664，HK RTX 3090 $0.129/h）
+
+### 已完成
+- Instance 建立 + 完整 boot sequence 跑通（見下方坑 1）
+- Provisioning 全自動：deps install → 27GB 權重下載（~15min，HK 機器網速正常）→ UI build → Supervisor 註冊
+- `music-inference` RUNNING，`/health` 回 `{"status":"ready","capabilities":["stream"]}`，`/v1/models` 正常
+- Caddy + Portal 修復後 RUNNING，`/etc/portal.yaml` 正確生成（8787→18787 Music UI）
+- Auth 檢查通過（無 key → 401）
+
+### 遇到的坑（已修，已 commit）
+1. **SSH launch mode 不跑完整 boot**：`--ssh` 模式用精簡 `/.launch`，不執行 `/etc/vast_boot.d/*`（無 supervisor/caddy/provisioning）。解法：`--onstart-cmd 'exec /opt/instance-tools/bin/boot_default.sh'`。
+2. **`@vastai-automatic-tag` 解析成裸 CUDA image**：第一次建立時拿到無 instance-tools 的 image。解法：明確指定 `vastai/pytorch:cuda-12.8.1-auto`。
+3. **`PORTAL_CONFIG` 的 `|` 被 `--env` 解析截斷**：env 沒進容器 → portal.yaml 空 → caddy FATAL。解法：onstart.sh 直接寫 `/etc/environment` + 重啟 caddy（caddy_config_manager 會從 env 重新生成 portal.yaml）。
+4. **`DEPLOY_REF` 未定義**：`set -u` 下直接掛。已修。
+5. **`npm: command not found`**：nvm 不在 provisioning/supervisor 的 PATH。解法：onstart.sh 和 music-ui.sh wrapper 都 source `/opt/nvm/nvm.sh`。
+6. **`music-ui.sh` 缺 `chmod +x`**：supervisor 報 "not executable"。已修。
+7. **smoke test 401 檢查送 `{}`**：pydantic 422 先於 auth。改送合法 body。
+
+### 未完成 / 待驗證
+- **CUDA OOM @ 3090（23.56GB）**：vocoder 階段爆記憶體（22.44GB 已佔，需再 130MB）。已加 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` 到 instance wrapper 並重啟，但**測試生成途中 instance 被 stop，結果未知**。
+  - 下次 start 後第一件事：重跑 10s 生成測試
+  - 若仍 OOM → `OFFLOAD=1`（CPU offload ~22GB，變慢）
+  - 再不行 → 換 4090（同價位 24GB 但較快）或 48GB 卡
+  - 注意：onstart.sh 的 inference wrapper **還沒**寫入 `PYTORCH_CUDA_ALLOC_CONF`——只改在 instance 上的 `/opt/supervisor-scripts/music-inference.sh`。重開機後 onstart 不會重跑（`/.provisioning_complete` 未設但 script 有冪等檢查），wrapper 是上次生成的舊版 → **下次啟動前需手動確認 wrapper 內容或重跑 onstart**
+- UI 端到端（瀏覽器開 Portal → Music UI → 生成試聽）未驗證
+- 外部存取（Caddy 8787 + auth）未驗證
+
+### 成本記錄
+- 本次測試約 1 小時 ≈ $0.13 + disk 費
+- 權重已在 disk 上，下次 start 免重抓

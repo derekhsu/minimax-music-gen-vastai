@@ -1,0 +1,10 @@
+# Pinned deps for inference/server.py (SPEC.md R6).
+# diffusers: PR #14456 not yet merged — pin the model card's commit, NOT main.
+diffusers @ git+https://github.com/huggingface/diffusers@dafe3733fcfdbf3c48915fe77be3aef65b5d6a2d
+# torch comes from the vastai/pytorch base image — do NOT pin here, it must match the image's CUDA build.
+transformers
+accelerate
+soundfile
+fastapi
+uvicorn
+huggingface_hub[cli]   # provides `hf` CLI used by onstart.sh weight download

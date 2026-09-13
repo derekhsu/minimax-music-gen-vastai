@@ -1,0 +1,30 @@
+# Secrets — never commit
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node (if UI is cloned/built locally)
+node_modules/
+dist/
+
+# Model weights & caches — downloaded on the instance, never in git
+models/
+*.safetensors
+*.gguf
+*.pth
+hf-cache/
+ui-data/
+
+# Generated audio
+*.wav
+*.mp3
+*.flac
+
+# OS
+.DS_Store

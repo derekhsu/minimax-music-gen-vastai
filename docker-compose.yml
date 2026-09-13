@@ -1,0 +1,46 @@
+# Local/single-host validation (SPEC.md M1). Requires a CUDA GPU + nvidia-container-toolkit.
+# On vast.ai this file is NOT used — deployment goes through scripts/onstart.sh.
+services:
+  inference:
+    image: pytorch/pytorch:2.8.0-cuda12.8-cudnn9-runtime
+    command: >
+      bash -c "pip install --no-cache-dir -r /deploy/inference/requirements.txt
+               && python /deploy/inference/server.py --host 0.0.0.0 --port 7862
+               ${MUSIC_API_KEY:+--api-key $MUSIC_API_KEY} ${OFFLOAD:+--offload}"
+    ports:
+      - "127.0.0.1:7862:7862"
+    volumes:
+      - .:/deploy:ro
+      - hf-cache:/root/.cache/huggingface
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:7862/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 80          # model load takes minutes on cold start
+      start_period: 60s
+
+  ui:
+    image: ghcr.io/adambenhassen/minimax-music-ui:latest   # TODO: pin tag at deploy time (SPEC open question)
+    ports:
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - ui-data:/data
+    environment:
+      MUSIC_API: http://inference:7862
+      MUSIC_API_KEY: ${MUSIC_API_KEY:-}
+    depends_on:
+      inference:
+        condition: service_started
+
+volumes:
+  hf-cache:
+  ui-data:

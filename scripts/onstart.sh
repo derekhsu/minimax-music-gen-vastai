@@ -116,5 +116,17 @@ redirect_stderr=true
 EOF
 done
 
+
 supervisorctl reread && supervisorctl update
-log "done — inference on 127.0.0.1:7862, UI on 127.0.0.1:18787 (external via Caddy :8787, PORTAL_CONFIG)"
+log "done — inference on 127.0.0.1:7862, UI on 127.0.0.1:18787 (external via Caddy :8787)"
+
+# --- 6. Portal config --------------------------------------------------------
+# PORTAL_CONFIG contains '|' which vast.ai's --env parsing truncates, so we set
+# it here instead of relying on the template env. caddy_config_manager.py
+# regenerates /etc/portal.yaml from PORTAL_CONFIG when the file is absent.
+PORTAL_LINE='PORTAL_CONFIG="localhost:1111:11111:/:Instance Portal|localhost:8787:18787:/:Music UI"'
+grep -q '^PORTAL_CONFIG=' /etc/environment || echo "$PORTAL_LINE" >> /etc/environment
+if ! grep -q 'Music UI' /etc/portal.yaml 2>/dev/null; then
+    rm -f /etc/portal.yaml
+    supervisorctl restart caddy || true
+fi

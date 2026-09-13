@@ -107,6 +107,7 @@ export PORT=18787
 cd /workspace/minimax-music-ui
 exec node server/dist/index.js
 EOF
+chmod +x /opt/supervisor-scripts/music-ui.sh
 
 for app in music-inference music-ui; do
     cat > "/etc/supervisor/conf.d/$app.conf" << EOF

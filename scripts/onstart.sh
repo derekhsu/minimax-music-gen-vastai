@@ -15,7 +15,7 @@ set -euo pipefail
 
 : "${MUSIC_API_KEY:?MUSIC_API_KEY must be set in the vast.ai template env}"
 
-DEPLOY_REPO="${DEPLOY_REPO:-https://github.com/USER/minimax-music-gen.git}"
+DEPLOY_REPO="${DEPLOY_REPO:-https://github.com/derekhsu/minimax-music-gen-vastai.git}"
 MUSIC_UI_REPO="${MUSIC_UI_REPO:-https://github.com/adambenhassen/minimax-music-ui.git}"
 MUSIC_UI_REF="${MUSIC_UI_REF:-1ef679772dc8c41955b6636189e5d66c291b1d66}"
 MODEL_REPO="MiniMaxAI/MiniMax-Music3"

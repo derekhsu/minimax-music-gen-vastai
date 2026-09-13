@@ -26,8 +26,11 @@ export HF_HOME="${HF_HOME:-/workspace/hf}"
 export DATA_DIRECTORY="${DATA_DIRECTORY:-/workspace}"
 
 log() { echo "[onstart] $*"; }
-
 . /venv/main/bin/activate
+
+# Node via nvm (not on PATH in provisioning context)
+export NVM_DIR="${NVM_DIR:-/opt/nvm}"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
 # --- 1. Fetch this repo (vendored inference server + scripts) -----------------
 if [ ! -d /workspace/deploy/.git ]; then
@@ -94,6 +97,8 @@ cat > /opt/supervisor-scripts/music-ui.sh << EOF
 utils=/opt/supervisor-scripts/utils
 . "\${utils}/logging.sh"
 . "\${utils}/environment.sh"
+export NVM_DIR="/opt/nvm"
+. "\$NVM_DIR/nvm.sh"
 export MUSIC_API="http://127.0.0.1:7862"
 export MUSIC_API_KEY="$MUSIC_API_KEY"
 export DATA_DIR="/workspace/ui-data"

@@ -26,7 +26,8 @@ echo "ok"
 echo "== auth check (expect 401 without key) =="
 if [ -n "$KEY" ]; then
     code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE/v1/audio/speech" \
-        -H 'Content-Type: application/json' -d '{}')
+        -H 'Content-Type: application/json' \
+        -d '{"model":"minimax_ttm","input":"[Instrumental]","instructions":"test","max_new_tokens":25}')
     [ "$code" = "401" ] || fail "expected 401 without key, got $code"
     echo "ok"
 fi

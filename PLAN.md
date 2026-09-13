@@ -150,5 +150,5 @@ POST /v1/audio/speech
 - 外部存取（Caddy 8787 + auth）未驗證
 
 ### 成本記錄
-- 本次測試約 1 小時 ≈ $0.13 + disk 費
-- 權重已在 disk 上，下次 start 免重抓
+- 本次測試約 1 小時 ≈ $0.13；instance 已 **destroy**（權重需重抓）
+- 下次部署：重跑完整 provisioning（~20-30min 冷啟動）

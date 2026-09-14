@@ -152,3 +152,26 @@ POST /v1/audio/speech
 ### 成本記錄
 - 本次測試約 1 小時 ≈ $0.13；instance 已 **destroy**（權重需重抓）
 - 下次部署：重跑完整 provisioning（~20-30min 冷啟動）
+
+## M2 部署記錄 #2（2026-09-14，目標 RTX 5090，中斷）
+
+### 嘗試過的 offer（全部已 destroy，無殘留）
+| Offer | 地區 | $/h | 結果 |
+|---|---|---|---|
+| 49700289 | 加拿大 QC | 0.428 | deverified — CDI device injection 失敗，container 拿不到 GPU |
+| 32984236 | 加拿大 BC | 0.413 | deverified — 同樣 CDI 錯誤 |
+| 47347947 | US | 0.473 | verified — create 回 `success:false` 但實際建了兩台（51028042/51028105），砍一台後另一台卡在 loading，用戶中斷 |
+
+### 發現
+- **deverified 5090 普遍有 CDI 問題**：`failed to inject CDI devices .../gpu=N: unknown`，host 端 NVIDIA Container Toolkit 設定壞了，租戶無法修。<$0.5 的 5090 幾乎全是 deverified，這個價位風險高。
+- **亞洲 <$0.5 的 5090 只有 CN 機器**（北京/四川 $0.433，verified），但 HF 權重下載有被牆風險。TW 最便宜 verified 是 $0.601（offer 50986657）。
+- `create instance` 回 `success:false` 不代表沒建——51028042 就是這樣產生的孤兒，要 `show instances` 確認。
+
+### 下次部署選項
+1. **TW 50986657（$0.601，verified，925Mbps 對稱）**— 最穩，價格可接受
+2. **CN 50041177/50556739（$0.433，verified）**— 便宜但需驗證 HF 連線，可能要 `HF_ENDPOINT=https://hf-mirror.com`
+3. **US 47347947（$0.473，verified）**— 非 CN 最便宜 verified，網速普通（500/423Mbps）
+
+### 成本記錄
+- 本次 3 台 instance 各存活 <10min，估計 <$0.15；全部 destroy，無殘留
+- 帳戶餘額 $0（需充值才能下次部署）
